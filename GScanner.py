@@ -12,6 +12,7 @@ import sys
 from Module.HostDetect import HostDetectWidget
 from Module.PortScan import PortScanWidget
 from PyQt5.QtWidgets import *
+import os
 
 
 class TabWidget(QTabWidget):
@@ -28,6 +29,8 @@ class Example(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()
+        if os.geteuid() != 0:
+            QMessageBox.information(self, 'Warning', 'You have no root permission, network scanner cannot be run', QMessageBox.Ok, QMessageBox.Ok)
 
     def initUI(self):
         grid = QGridLayout()
@@ -38,7 +41,6 @@ class Example(QWidget):
         self.resize(800, 400)
         self.center()
         self.setWindowTitle('GScanner')
-        # self.setWindowIcon(QIcon('web.png'))
         self.show()
 
     def center(self):

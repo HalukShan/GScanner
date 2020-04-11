@@ -151,6 +151,9 @@ class HostDetectWidget(QDialog):
         self.scan_finished()
 
     def start(self):
+        if os.geteuid() != 0:
+            QMessageBox.information(self, 'Message', 'Root required for Scanner', QMessageBox.Ok, QMessageBox.Ok)
+            return
         """ Clear task queue item """
         self.taskQueue.queue.clear()
         hosts_list = Util.get_hosts_list(self.hosts.text())

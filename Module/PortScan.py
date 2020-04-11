@@ -103,6 +103,9 @@ class PortScanWidget(QDialog):
         grid.addWidget(self.pbar, 5, 1, 1, 8)
 
     def start(self):
+        if os.geteuid() != 0:
+            QMessageBox.information(self, 'Message', 'Root required for Scanner', QMessageBox.Ok, QMessageBox.Ok)
+            return
         self.taskQueue.queue.clear()
         """ Get tasks """
         hosts_list = Util.get_hosts_list(self.hosts.text())
