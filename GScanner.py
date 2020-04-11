@@ -8,19 +8,10 @@ website: halukshan@gmail.com
 Last edited: 2020-4-2
 """
 
-from scapy.all import *
 import sys
-from HostDetect import HostDetectWidget
-from PortScan import PortScanWidget
+from Module.HostDetect import HostDetectWidget
+from Module.PortScan import PortScanWidget
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import QIcon, QFont
-from PyQt5.QtCore import *
-from scapy.layers.inet import ICMP, IP
-from scapy.layers.l2 import Ether, ARP
-import time
-from threading import Thread
-import queue
-import Util
 
 
 class TabWidget(QTabWidget):

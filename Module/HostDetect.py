@@ -4,9 +4,8 @@ from PyQt5.QtCore import *
 from scapy.layers.inet import ICMP, IP
 from scapy.layers.l2 import Ether, ARP
 from threading import Thread
-import StopThreading
 import queue
-import Util
+from Util import Util, StopThreading
 
 
 class HostDetectWidget(QDialog):

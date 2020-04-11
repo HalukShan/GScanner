@@ -3,9 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from scapy.layers.inet import ICMP, IP, TCP, UDP
 from threading import Thread
-import StopThreading
 import queue
-import Util
+from Util import Util, StopThreading
 
 
 class PortScanWidget(QDialog):
