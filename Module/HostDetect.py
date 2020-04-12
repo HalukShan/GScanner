@@ -102,6 +102,14 @@ class HostDetectWidget(QDialog):
         self.tableWidget.setItem(row_position, 1, QTableWidgetItem(host))
         self.tableWidget.setItem(row_position, 2, QTableWidgetItem("Alive"))
 
+    def timerEvent(self, e):
+        """ Update the process bar """
+        self.pbar.setValue(self.step)
+        if self.step >= 100:
+            self.timer.stop()
+            self.statusLabel.setText('Finished')
+            return
+
     def icmp_scan(self):
         while not self.taskQueue.empty():
             if self.lock: continue
@@ -109,15 +117,24 @@ class HostDetectWidget(QDialog):
                 host = self.taskQueue.get(block=False)
             except queue.Empty:
                 break
-            ans = sr1(IP(dst=host) / ICMP(), iface=self.interface.currentText(), timeout=0.2, verbose=False)
-            if ans:
-                self.add_table_item(host)
-            self.step = self.step + int(100/self.taskNum)
+            send(IP(dst=host) / ICMP(), iface=self.interface.currentText(), verbose=False)
+            self.step = self.step + 100/self.taskNum
         self.scan_finished()
+
+    def icmp_sniffer(self):
+        def icmp_scan_callback(pkt):
+            if ICMP in pkt and pkt[IP].dst == self.adapter_info[self.interface.currentText()][0]:
+                self.add_table_item(pkt[IP].src)
+        sniff(filter='icmp', store=0, prn=icmp_scan_callback, timeout=3)
 
     def scan_finished(self):
         if threading.current_thread() in self.threadlist:
             self.threadlist.remove(threading.current_thread())
+        """ When scan too many targets, some threads will auto stop, and cause the result that cannot
+                    finish normally, this is a problem here """
+        for t in self.threadlist:
+            if "stop" in str(t):
+                self.threadlist.remove(t)
         if not self.threadlist:
             self.step = 100
             try:
@@ -127,14 +144,6 @@ class HostDetectWidget(QDialog):
             self.startbtn.setText("Start")
             self.startbtn.clicked.connect(self.start)
 
-    def timerEvent(self, e):
-        """ Update the process bar """
-        self.pbar.setValue(self.step)
-        if self.step >= 100:
-            self.timer.stop()
-            self.statusLabel.setText('Finished')
-            return
-
     def arp_scan(self):
         ip_src, mac_src = self.adapter_info[self.interface.currentText()]
         while not self.taskQueue.empty():
@@ -143,12 +152,16 @@ class HostDetectWidget(QDialog):
                 ip_dst = self.taskQueue.get(block=False)
             except queue.Empty:
                 break
-            pkt = Ether()/ARP(op=1, psrc=ip_src, pdst=ip_dst)
-            ans = srp1(pkt, iface=self.interface.currentText(), timeout=0.2, verbose=False)
-            if ans:
-                self.add_table_item(ans['ARP'].psrc + "  " + ans['ARP'].hwsrc)
-            self.step = self.step + int(100 / self.taskNum)
+            pkt = Ether(dst='FF:FF:FF:FF:FF:FF')/ARP(op=1, pdst=ip_dst)
+            sendp(pkt, iface=self.interface.currentText(), verbose=False)
+            self.step = self.step + 100 / self.taskNum
         self.scan_finished()
+
+    def arp_sniffer(self):
+        def arp_scan_callback(pkt):
+            if ARP in pkt and pkt[ARP].op is 2:
+                self.add_table_item(pkt['ARP'].psrc + "  " + pkt['ARP'].hwsrc)
+        sniff(filter='arp', store=0, prn=arp_scan_callback, timeout=3)
 
     def start(self):
         if os.geteuid() != 0:
@@ -173,8 +186,10 @@ class HostDetectWidget(QDialog):
         self.threadlist = []
         if self.group.checkedButton().text() == "ICMP":
             self.threadlist.extend([Thread(target=self.icmp_scan) for _ in range(self.threadset.value())])
+            Thread(target=self.icmp_sniffer).start()
         elif self.group.checkedButton().text() == "ARP":
             self.threadlist.extend([Thread(target=self.arp_scan) for _ in range(self.threadset.value())])
+            Thread(target=self.arp_sniffer).start()
 
         """ Make sure all threads start """
         self.lock = True
@@ -193,7 +208,6 @@ class HostDetectWidget(QDialog):
         self.statusLabel.setText("Stop")
         for t in self.threadlist:
             StopThreading.stop_thread(t)
-        print(self.threadlist)
         self.startbtn.setText("Start")
         try:
             self.startbtn.clicked.disconnect(self.stop)
