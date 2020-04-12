@@ -26,6 +26,8 @@ or `ARP` protocol. `ARP` protocol is mainly used for rapid detection of LAN host
  ARP scan use multi-thread `send()` and single thread to `sniff`.
   It sends data packets in batch through broadcast. Sniff filters out `is at`
    reply. The whole network segment can be scanned in 2-3 seconds.
+   
+![](http://blog.halukshan.com/blogimg/gs1.jpg)
 
 ### Port Scan
 The port scanning function supports `TCP`, `UDP`, `SYN` and `FIN` mode 
@@ -34,3 +36,5 @@ You can `double-click` the host item on the right to filter and view the
 scanning results under the corresponding host. Multi thread sending is 
 supported. It is measured that `1000` ports are scanned under `16` threads 
 for about `13` seconds.
+
+![](http://blog.halukshan.com/blogimg/gs2.jpg)
