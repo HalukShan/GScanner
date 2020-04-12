@@ -24,7 +24,7 @@ def check_ip(ip):
 
 
 def check_domain(host):
-    pattern = re.compile(r"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$")
+    pattern = re.compile(r"^[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$")
     if pattern.search(host):
         return True
 
