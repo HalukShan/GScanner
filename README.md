@@ -27,7 +27,7 @@ or `ARP` protocol. `ARP` protocol is mainly used for rapid detection of LAN host
   It sends data packets in batch through broadcast. Sniff filters out `is at`
    reply. The whole network segment can be scanned in 2-3 seconds.
    
-![](http://blog.halukshan.com/blogimg/gs1.jpg)
+![](https://github.com/HalukShan/GScanner/blob/master/Img/gs1.jpg)
 
 ### Port Scan
 The port scanning function supports `TCP`, `UDP`, `SYN` and `FIN` mode 
@@ -37,4 +37,4 @@ scanning results under the corresponding host. Multi thread sending is
 supported. It is measured that `1000` ports are scanned under `16` threads 
 for about `13` seconds.
 
-![](http://blog.halukshan.com/blogimg/gs2.jpg)
+![](https://github.com/HalukShan/GScanner/blob/master/Img/gs2.jpg)
