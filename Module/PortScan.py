@@ -179,15 +179,16 @@ class PortScanWidget(QDialog):
             sport = RandShort()
             syn = IP(dst=ip) / TCP(sport=sport, dport=int(port), flags='S')
             syn_ack = sr1(syn, iface=self.interface.currentText(), timeout=0.2, verbose=False)
-            if syn_ack and syn_ack.getlayer(TCP).flags == 'SA':
-                self.add_table_item(ip, port, 'Open')
-                ack = IP(dst=ip)/TCP(sport=sport, dport=int(port), flags='A', seq=syn_ack.ack, ack=syn_ack.seq + 1)
-                send(ack, iface=self.interface.currentText(), verbose=False)
-            elif syn_ack and syn_ack.getlayer(TCP).flags == 'RA':
-                self.add_table_item(ip, port, 'Closed')
+            if syn_ack:
+                if syn_ack.getlayer(TCP).flags == 'SA':
+                    self.add_table_item(ip, port, 'Open')
+                    ack = IP(dst=ip)/TCP(sport=sport, dport=int(port), flags='A', seq=syn_ack.ack, ack=syn_ack.seq + 1)
+                    send(ack, iface=self.interface.currentText(), verbose=False)
+                elif syn_ack.getlayer(TCP).flags == 'RA':
+                    self.add_table_item(ip, port, 'Closed')
             else:
                 self.add_table_item(ip, port, "Filtered")
-            self.step = self.step + int(100 / self.taskNum)
+            self.step = self.step + 100 / self.taskNum
         self.scan_finished()
 
     def udp_scan(self):
@@ -199,8 +200,9 @@ class PortScanWidget(QDialog):
                 break
             sport = RandShort()
             ans = sr1(IP(dst=ip) / UDP(sport=sport, dport=int(port)), timeout=0.2, iface=self.interface.currentText(), verbose=False)
-            if ans and ans.haslayer(UDP):
-                self.add_table_item(ip, port, 'Open')
+            if ans:
+                if ans.haslayer(UDP):
+                    self.add_table_item(ip, port, 'Open')
             elif not ans:
                 self.add_table_item(ip, port, "Open|Filtered")
             elif ans.haslayer(ICMP):
@@ -208,7 +210,7 @@ class PortScanWidget(QDialog):
                     self.add_table_item(ip, port, "Closed")
                 elif int(ans.getlayer(ICMP).type) == 3 and int(ans.getlayer(ICMP).code) in [1, 2, 9, 10, 13]:
                     self.add_table_item(ip, port, "Filtered")
-            self.step = self.step + int(100 / self.taskNum)
+            self.step = self.step + 100 / self.taskNum
         self.scan_finished()
 
     def syn_scan(self):
@@ -221,18 +223,19 @@ class PortScanWidget(QDialog):
             sport = RandShort()
             syn = IP(dst=ip) / TCP(sport=sport, dport=int(port), flags='S')
             syn_ack = sr1(syn, iface=self.interface.currentText(), timeout=0.2, verbose=False)
-            if syn_ack and syn_ack.haslayer(TCP):
-                if syn_ack.getlayer(TCP).flags == 'SA':
-                    self.add_table_item(ip, port, 'Open')
-                    send(IP(dst=ip) / TCP(sport=sport, dport=int(port), flags='R'), iface=self.interface.currentText(), verbose=False)
-                elif syn_ack.getlayer(TCP).flags == 'RA':
-                    self.add_table_item(ip, port, 'Closed')
-            elif syn_ack and syn_ack.haslayer(ICMP):
-                if int(syn_ack.getlayer(ICMP).type) == 3 and int(syn_ack.getlayer(ICMP).code) in [1, 2, 9, 10, 13]:
-                    self.add_table_item(ip, port, "Filtered")
+            if syn_ack:
+                if syn_ack.haslayer(TCP):
+                    if syn_ack.getlayer(TCP).flags == 'SA':
+                        self.add_table_item(ip, port, 'Open')
+                        send(IP(dst=ip) / TCP(sport=sport, dport=int(port), flags='R'), iface=self.interface.currentText(), verbose=False)
+                    elif syn_ack.getlayer(TCP).flags == 'RA':
+                        self.add_table_item(ip, port, 'Closed')
+                elif syn_ack.haslayer(ICMP):
+                    if int(syn_ack.getlayer(ICMP).type) == 3 and int(syn_ack.getlayer(ICMP).code) in [1, 2, 9, 10, 13]:
+                        self.add_table_item(ip, port, "Filtered")
             elif not syn_ack:
                 self.add_table_item(ip, port, "Filtered")
-            self.step = self.step + int(100 / self.taskNum)
+            self.step = self.step + 100 / self.taskNum
         self.scan_finished()
 
     def fin_scan(self):
@@ -249,7 +252,7 @@ class PortScanWidget(QDialog):
             elif ans.haslayer(TCP):
                 if ans.getlayer(TCP).flags == "RA":
                     self.add_table_item(ip, port, "Closed")
-            self.step = self.step + int(100 / self.taskNum)
+            self.step = self.step + 100 / self.taskNum
         self.scan_finished()
 
     def add_table_item(self, host, port, status):
@@ -270,6 +273,11 @@ class PortScanWidget(QDialog):
     def scan_finished(self):
         if threading.current_thread() in self.threadlist:
             self.threadlist.remove(threading.current_thread())
+        """ When scan too many targets, some threads will auto stop, and cause the result that cannot
+            finish expectedly, this is a problem here """
+        for t in self.threadlist:
+            if "stop" in str(t):
+                self.threadlist.remove(t)
         if not self.threadlist:
             self.step = 100
             try:
@@ -301,7 +309,10 @@ class PortScanWidget(QDialog):
         self.timer.stop()
         self.statusLabel.setText("Stop")
         for t in self.threadlist:
-            StopThreading.stop_thread(t)
+            try:
+                StopThreading.stop_thread(t)
+            except ValueError:
+                self.threadlist.remove(t)  # The thread has been stopped
         self.startbtn.setText("Start")
         try:
             self.startbtn.clicked.disconnect(self.stop)
