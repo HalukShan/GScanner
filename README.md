@@ -15,6 +15,7 @@ A Comprehensive network scanner developed by python for MacOS/Linux.
 ```
 git clone https://github.com/HalukShan/GScanner.git
 cd GScanner
+pip3 install -r requirements.txt
 sudo python3 GScanner.py
 ```
 The program requires root permission. If it is not opened as root, 
