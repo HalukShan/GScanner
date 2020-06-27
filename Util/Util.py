@@ -1,5 +1,6 @@
 import psutil
 import re
+import socket
 
 
 def get_adapter():
@@ -24,9 +25,13 @@ def check_ip(ip):
 
 
 def check_domain(host):
-    pattern = re.compile(r"^[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$")
+    pattern = re.compile(r"^(?=^.{3,255}$)[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$")
     if pattern.search(host):
-        return True
+        try:
+            socket.getaddrinfo(host, None)
+            return True
+        except:
+            return False
 
 
 def check_port(port):

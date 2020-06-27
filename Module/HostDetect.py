@@ -117,7 +117,9 @@ class HostDetectWidget(QDialog):
                 host = self.taskQueue.get(block=False)
             except queue.Empty:
                 break
-            send(IP(dst=host) / ICMP(), iface=self.interface.currentText(), verbose=False)
+            res = sr1(IP(dst=host) / ICMP(), iface=self.interface.currentText(), verbose=False, timeout=0.3)
+            if res:
+                self.add_table_item(res[IP].src)
             self.step = self.step + 100/self.taskNum
         self.scan_finished()
 
@@ -152,13 +154,17 @@ class HostDetectWidget(QDialog):
                 ip_dst = self.taskQueue.get(block=False)
             except queue.Empty:
                 break
-            pkt = Ether(dst='FF:FF:FF:FF:FF:FF')/ARP(op=1, pdst=ip_dst)
-            sendp(pkt, iface=self.interface.currentText(), verbose=False)
+            pkt = Ether()/ARP(op=1, pdst=ip_dst)
+            #sendp(pkt, iface=self.interface.currentText(), verbose=False)
+            res = srp1(pkt, iface=self.interface.currentText(), verbose=False, timeout=0.3)
+            if res and res[ARP].op is 2:
+                self.add_table_item(res['ARP'].psrc + "  " + res['ARP'].hwsrc)
             self.step = self.step + 100 / self.taskNum
         self.scan_finished()
 
     def arp_sniffer(self):
         def arp_scan_callback(pkt):
+            print(pkt.summary())
             if ARP in pkt and pkt[ARP].op is 2:
                 self.add_table_item(pkt['ARP'].psrc + "  " + pkt['ARP'].hwsrc)
         sniff(filter='arp', store=0, prn=arp_scan_callback, timeout=3)
@@ -186,10 +192,10 @@ class HostDetectWidget(QDialog):
         self.threadlist = []
         if self.group.checkedButton().text() == "ICMP":
             self.threadlist.extend([Thread(target=self.icmp_scan) for _ in range(self.threadset.value())])
-            Thread(target=self.icmp_sniffer).start()
+            #Thread(target=self.icmp_sniffer).start()
         elif self.group.checkedButton().text() == "ARP":
             self.threadlist.extend([Thread(target=self.arp_scan) for _ in range(self.threadset.value())])
-            Thread(target=self.arp_sniffer).start()
+            #Thread(target=self.arp_sniffer).start()
 
         """ Make sure all threads start """
         self.lock = True
