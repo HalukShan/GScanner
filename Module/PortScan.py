@@ -22,6 +22,7 @@ class PortScanWidget(QDialog):
         self.tableWidget.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.tableWidget.horizontalHeader().setSectionResizeMode(0, 10)
         self.tableWidget.verticalHeader().hide()
+        # self.tableWidget.setSortingEnabled(True)
 
         """ host table """
         self.host_table = QTableWidget()
@@ -286,7 +287,8 @@ class PortScanWidget(QDialog):
                 pass
             self.startbtn.setText("Start")
             self.startbtn.clicked.connect(self.start)
-            self.tableWidget.sortItems(2, Qt.AscendingOrder)
+            self.tableWidget.sortItems(3, Qt.AscendingOrder)
+
 
     def timerEvent(self, e):
         """ Update the process bar """

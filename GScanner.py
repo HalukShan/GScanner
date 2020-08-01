@@ -14,7 +14,6 @@ from Module.PortScan import PortScanWidget
 from PyQt5.QtWidgets import *
 import os
 
-
 class TabWidget(QTabWidget):
     def __init__(self, parent=None):
         super(TabWidget, self).__init__(parent)
